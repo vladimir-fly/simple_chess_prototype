@@ -31,7 +31,8 @@ namespace SCPrototype
 
         private void EndGameCheck()
         {
-            var endGame = false;
+            var endGame =
+                !KingAvailableCells(_availableChessPieces.FirstOrDefault(p => p.Type == EChessPieceType.King && p.Side == CurrentSideTurn)).Any();
 
             if (endGame && GameEnded != null)
                 GameEnded();
@@ -46,7 +47,7 @@ namespace SCPrototype
             {
                 Move(from, to);
                 ChangeSide();
-                EndGameCheck();
+                //EndGameChseck();
             }
 
             Debug.Log(string.Format("[Chessboard.TryMove] result = {0}", result));
@@ -154,9 +155,7 @@ namespace SCPrototype
                 if (!leftChecked)
                 {
                     var left = rook.CellId - 1 * i;
-                    var tmp = rook.CellId / 8;
-
-                    if (left < tmp * 8) leftChecked = true;
+                    if (left < 0 || left > 63) leftChecked = true;
                     else
                     {
                         if (_availableChessPieces.Any(p => p.Side == rook.Side && p.CellId == left)) leftChecked = true;
@@ -172,9 +171,7 @@ namespace SCPrototype
                 if (!rightChecked)
                 {
                     var right = rook.CellId + 1 * i;
-                    var tmp = rook.CellId / 8;
-
-                    if (right > tmp * 8) rightChecked = true;
+                    if (right < 0 || right > 63) rightChecked = true;
                     else
                     {
                         if (_availableChessPieces.Any(p => p.Side == rook.Side && p.CellId == right)) rightChecked = true;
@@ -190,8 +187,7 @@ namespace SCPrototype
                 if (!upChecked)
                 {
                     var up = rook.CellId - 8 * i;
-
-                    if (up < 0) upChecked = true;
+                    if (up < 0 || up > 63) upChecked = true;
                     else
                     {
                         if (_availableChessPieces.Any(p => p.Side == rook.Side && p.CellId == up)) upChecked = true;
@@ -207,8 +203,7 @@ namespace SCPrototype
                 if (!downChecked)
                 {
                     var down = rook.CellId + 8 * i;
-
-                    if (down > 63) downChecked = true;
+                    if (down < 0 || down > 63) downChecked = true;
                     else
                     {
                         if (_availableChessPieces.Any(p => p.Side == rook.Side && p.CellId == down)) downChecked = true;
@@ -228,19 +223,21 @@ namespace SCPrototype
         private List<int> KnightAvailableCells(ChessPiece knight)
         {
             var result = new List<int>();
+            var offsets = new[] {6, 10, 15, 17};
 
-            switch (knight.Side)
+            foreach (var offset in offsets)
             {
-                case true:
+                var targetCellId = knight.CellId + offset;
 
+                if ((targetCellId >= 0 && targetCellId < 64) &&
+                    (_availableChessPieces.Any(p => p.Side != knight.Side && p.CellId == targetCellId) ||
+                    (_availableChessPieces.All(p => p.CellId != targetCellId)))) result.Add(targetCellId);
 
-
-                    break;
-                case false:
-
-                    break;
+                targetCellId = knight.CellId - offset;
+                if ((targetCellId >= 0 && targetCellId < 64) &&
+                    (_availableChessPieces.Any(p => p.Side != knight.Side && p.CellId == targetCellId) ||
+                    (_availableChessPieces.All(p => p.CellId != targetCellId)))) result.Add(targetCellId);
             }
-
             return result;
         }
 
@@ -248,18 +245,81 @@ namespace SCPrototype
         {
             var result = new List<int>();
 
-            switch (bishop.Side)
+            var northWestChecked = false;
+            var northEastChecked = false;
+            var southWestChecked = false;
+            var southEastChecked = false;
+
+            for (var i = 1; i < 8; i++)
             {
-                case true:
+                if (!northWestChecked)
+                {
+                    var northWest = bishop.CellId - 9 * i;
+                    if (northWest < 0 || northWest > 63 || bishop.CellId % 8 == 0) northWestChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == bishop.Side && p.CellId == northWest)) northWestChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != northWest)) result.Add(northWest);
+                        if (_availableChessPieces.Any(p => p.Side != bishop.Side && p.CellId == northWest))
+                        {
+                            result.Add(northWest);
+                            northWestChecked = true;
+                        }
+                    }
+                    if (northWest % 8 == 0) northWestChecked = true;
+                }
 
+                if (!northEastChecked)
+                {
+                    var northEast = bishop.CellId - 7 * i;
+                    if (northEast < 0 || northEast > 63 || (bishop.CellId + 1) % 8 == 0) northEastChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == bishop.Side && p.CellId == northEast)) northEastChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != northEast)) result.Add(northEast);
+                        if (_availableChessPieces.Any(p => p.Side != bishop.Side && p.CellId == northEast))
+                        {
+                            result.Add(northEast);
+                            northEastChecked = true;
+                        }
+                    }
+                    if ((northEast + 1) % 8 == 0) northEastChecked = true;
+                }
 
+                if (!southWestChecked)
+                {
+                    var southWest = bishop.CellId + 7 * i;
+                    if (southWest < 0 || southWest > 63 || bishop.CellId % 8 == 0) southWestChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == bishop.Side && p.CellId == southWest)) southWestChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != southWest)) result.Add(southWest);
+                        if (_availableChessPieces.Any(p => p.Side != bishop.Side && p.CellId == southWest))
+                        {
+                            result.Add(southWest);
+                            southWestChecked = true;
+                        }
+                    }
+                    if (southWest % 8 == 0) southWestChecked = true;
+                }
 
-                    break;
-                case false:
-
-                    break;
+                if (!southEastChecked)
+                {
+                    var southEast = bishop.CellId + 9 * i;
+                    if (southEast < 0 || southEast > 63 || (bishop.CellId + 1) % 8 == 0) southEastChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == bishop.Side && p.CellId == southEast)) southEastChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != southEast)) result.Add(southEast);
+                        if (_availableChessPieces.Any(p => p.Side != bishop.Side && p.CellId == southEast))
+                        {
+                            result.Add(southEast);
+                            southEastChecked = true;
+                        }
+                    }
+                    if ((southEast + 1) % 8 == 0) southEastChecked = true;
+                }
             }
-
 
             return result;
         }
@@ -268,35 +328,177 @@ namespace SCPrototype
         {
             var result = new List<int>();
 
-            switch (queen.Side)
+            var northChecked = false;
+            var southChecked = false;
+            var westChecked = false;
+            var eastChecked = false;
+
+            var northWestChecked = false;
+            var northEastChecked = false;
+            var southWestChecked = false;
+            var southEastChecked = false;
+
+            for (var i = 1; i < 8; i++)
             {
-                case true:
+                if (!westChecked)
+                {
+                    var left = queen.CellId - 1 * i;
+                    if (left < 0 || left > 63) westChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == queen.Side && p.CellId == left)) westChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != left)) result.Add(left);
+                        if (_availableChessPieces.Any(p => p.Side != queen.Side && p.CellId == left))
+                        {
+                            result.Add(left);
+                            westChecked = true;
+                        }
+                    }
+                }
 
-                    break;
-                case false:
+                if (!eastChecked)
+                {
+                    var right = queen.CellId + 1 * i;
+                    if (right < 0 || right > 63) eastChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == queen.Side && p.CellId == right)) eastChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != right)) result.Add(right);
+                        if (_availableChessPieces.Any(p => p.Side != queen.Side && p.CellId == right))
+                        {
+                            result.Add(right);
+                            eastChecked = true;
+                        }
+                    }
+                }
 
-                    break;
+                if (!northChecked)
+                {
+                    var up = queen.CellId - 8 * i;
+                    if (up < 0 || up > 63) northChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == queen.Side && p.CellId == up)) northChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != up)) result.Add(up);
+                        if (_availableChessPieces.Any(p => p.Side != queen.Side && p.CellId == up))
+                        {
+                            result.Add(up);
+                            northChecked = true;
+                        }
+                    }
+                }
+
+                if (!southChecked)
+                {
+                    var down = queen.CellId + 8 * i;
+                    if (down < 0 || down > 63) southChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == queen.Side && p.CellId == down)) southChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != down)) result.Add(down);
+                        if (_availableChessPieces.Any(p => p.Side != queen.Side && p.CellId == down))
+                        {
+                            result.Add(down);
+                            southChecked = true;
+                        }
+                    }
+                }
+
+                if (!northWestChecked)
+                {
+                    var northWest = queen.CellId - 9 * i;
+                    if (northWest < 0 || northWest > 63 || queen.CellId % 8 == 0) northWestChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == queen.Side && p.CellId == northWest)) northWestChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != northWest)) result.Add(northWest);
+                        if (_availableChessPieces.Any(p => p.Side != queen.Side && p.CellId == northWest))
+                        {
+                            result.Add(northWest);
+                            northWestChecked = true;
+                        }
+                    }
+                    if (northWest % 8 == 0) northWestChecked = true;
+                }
+
+                if (!northEastChecked)
+                {
+                    var northEast = queen.CellId - 7 * i;
+                    if (northEast < 0 || northEast > 63 || (queen.CellId + 1) % 8 == 0) northEastChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == queen.Side && p.CellId == northEast)) northEastChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != northEast)) result.Add(northEast);
+                        if (_availableChessPieces.Any(p => p.Side != queen.Side && p.CellId == northEast))
+                        {
+                            result.Add(northEast);
+                            northEastChecked = true;
+                        }
+                    }
+                    if ((northEast + 1) % 8 == 0) northEastChecked = true;
+                }
+
+                if (!southWestChecked)
+                {
+                    var southWest = queen.CellId + 7 * i;
+                    if (southWest < 0 || southWest > 63 || queen.CellId % 8 == 0) southWestChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == queen.Side && p.CellId == southWest)) southWestChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != southWest)) result.Add(southWest);
+                        if (_availableChessPieces.Any(p => p.Side != queen.Side && p.CellId == southWest))
+                        {
+                            result.Add(southWest);
+                            southWestChecked = true;
+                        }
+                    }
+                    if (southWest % 8 == 0) southWestChecked = true;
+                }
+
+                if (!southEastChecked)
+                {
+                    var southEast = queen.CellId + 9 * i;
+                    if (southEast < 0 || southEast > 63 || (queen.CellId + 1) % 8 == 0) southEastChecked = true;
+                    else
+                    {
+                        if (_availableChessPieces.Any(p => p.Side == queen.Side && p.CellId == southEast)) southEastChecked = true;
+                        if (_availableChessPieces.All(p => p.CellId != southEast)) result.Add(southEast);
+                        if (_availableChessPieces.Any(p => p.Side != queen.Side && p.CellId == southEast))
+                        {
+                            result.Add(southEast);
+                            southEastChecked = true;
+                        }
+                    }
+                    if ((southEast + 1) % 8 == 0) southEastChecked = true;
+                }
             }
-
-
             return result;
         }
 
         private List<int> KingAvailableCells(ChessPiece king)
         {
-            var result = new List<int>();
-
-            switch (king.Side)
+            var tmpResult = new List<int>();
+            var offsets = new[] {1, 7, 8, 9};
+            foreach (var offset in offsets)
             {
-                case true:
+                var targetCellId = king.CellId + offset;
+                if ((targetCellId >= 0 && targetCellId < 64) &&
+                    (_availableChessPieces.Any(p => p.Side != king.Side && p.CellId == targetCellId) ||
+                     (_availableChessPieces.All(p => p.CellId != targetCellId)))) tmpResult.Add(targetCellId);
 
-                    break;
-                case false:
-
-                    break;
+                targetCellId = king.CellId - offset;
+                if ((targetCellId >= 0 && targetCellId < 64) &&
+                    (_availableChessPieces.Any(p => p.Side != king.Side && p.CellId == targetCellId) ||
+                     (_availableChessPieces.All(p => p.CellId != targetCellId)))) tmpResult.Add(targetCellId);
             }
 
-            return result;
+            var opponentChessPieces = _availableChessPieces.Where(p => p.Side != king.Side);
+            var result = tmpResult;
+
+//            foreach (var chessPiece in opponentChessPieces)
+//                tmpResult.AddRange(GetReachableCells(chessPiece));
+
+            return result; //.Except(tmpResult).ToList();
         }
 
         private void Move(int from, int to)
