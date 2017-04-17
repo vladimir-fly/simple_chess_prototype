@@ -12,7 +12,7 @@ namespace SCPrototype
 
         public event Action SideChanged;
 
-        public event Action GameEnded;
+        public event Action<string> OnGameOver;
 
         public Chessboard(List<ChessPiece> chessPieces)
         {
@@ -31,23 +31,29 @@ namespace SCPrototype
 
         private void EndGameCheck()
         {
-            var endGame =
-                !KingAvailableCells(_availableChessPieces.FirstOrDefault(p => p.Type == EChessPieceType.King && p.Side == CurrentSideTurn)).Any();
+            var kingChessPiece =
+                _availableChessPieces.FirstOrDefault(p => p.Side != CurrentSideTurn && p.Type == EChessPieceType.King);
 
-            if (endGame && GameEnded != null)
-                GameEnded();
+            var kingReachableCells = KingAvailableCells(kingChessPiece);
+            if (!kingReachableCells.Any()) return;
+
+            var safetyCells = CheckKingSafetyCells(kingChessPiece, kingReachableCells);
+
+            Debug.Log(string.Format("[Chessboard.EndGameCheck] King safe cells: {0}.",
+                string.Join(", ", safetyCells.Select(p => p.ToString()).ToArray())));
+
+            if (!safetyCells.Any() && OnGameOver != null) OnGameOver("Game Over!");
         }
 
         public bool TryMove(int from, int to)
         {
             Debug.Log(string.Format("[Chessboard.TryMove] From: {0}; to: {1}.", from, to));
-
             var result = CheckMove(from, to);
             if (result)
             {
                 Move(from, to);
+                EndGameCheck();
                 ChangeSide();
-                //EndGameChseck();
             }
 
             Debug.Log(string.Format("[Chessboard.TryMove] result = {0}", result));
@@ -63,7 +69,6 @@ namespace SCPrototype
         private bool CheckMove(int from, int to)
         {
             var chessPiece = _availableChessPieces.FirstOrDefault(p => p.CellId == from && p.Side == CurrentSideTurn);
-
             if (chessPiece == null)
             {
                 Debug.Log("[Chessboard.CheckMove] Invalid move!");
@@ -71,14 +76,22 @@ namespace SCPrototype
             }
 
             var reachableCells = GetReachableCells(chessPiece);
+            if (chessPiece.Type == EChessPieceType.King)
+            {
+                var cells = CheckKingSafetyCells(chessPiece, reachableCells);
+                var enumerable = cells as IList<int> ?? cells.ToList();
+
+                Debug.Log(string.Format("[Chessboard.GetReachableCells] {0} available cells: {1}.",
+                    chessPiece.Type, string.Join(", ", enumerable.Select(p => p.ToString()).ToArray())));
+
+                return enumerable.Contains(to);
+            }
+
             return reachableCells.Contains(to);
         }
 
         private List<int> GetReachableCells(ChessPiece chessPiece)
         {
-            Debug.Log(string.Format("[Chessboard.GetReachableCells] Type: {0}; Side: {1}; CellId: {2}.",
-                chessPiece.Type, chessPiece.Side ? "white" : "black", chessPiece.CellId));
-
             var result = new List<int>();
 
             switch (chessPiece.Type)
@@ -477,28 +490,33 @@ namespace SCPrototype
 
         private List<int> KingAvailableCells(ChessPiece king)
         {
-            var tmpResult = new List<int>();
+            var result = new List<int>();
             var offsets = new[] {1, 7, 8, 9};
             foreach (var offset in offsets)
             {
                 var targetCellId = king.CellId + offset;
                 if ((targetCellId >= 0 && targetCellId < 64) &&
                     (_availableChessPieces.Any(p => p.Side != king.Side && p.CellId == targetCellId) ||
-                     (_availableChessPieces.All(p => p.CellId != targetCellId)))) tmpResult.Add(targetCellId);
+                     (_availableChessPieces.All(p => p.CellId != targetCellId)))) result.Add(targetCellId);
 
                 targetCellId = king.CellId - offset;
                 if ((targetCellId >= 0 && targetCellId < 64) &&
                     (_availableChessPieces.Any(p => p.Side != king.Side && p.CellId == targetCellId) ||
-                     (_availableChessPieces.All(p => p.CellId != targetCellId)))) tmpResult.Add(targetCellId);
+                     (_availableChessPieces.All(p => p.CellId != targetCellId)))) result.Add(targetCellId);
             }
 
+            return result;
+        }
+
+        private IEnumerable<int> CheckKingSafetyCells(ChessPiece king, IEnumerable<int> reachableCells)
+        {
+            var result = new List<int>();
             var opponentChessPieces = _availableChessPieces.Where(p => p.Side != king.Side);
-            var result = tmpResult;
 
-//            foreach (var chessPiece in opponentChessPieces)
-//                tmpResult.AddRange(GetReachableCells(chessPiece));
+            foreach (var chessPiece in opponentChessPieces)
+                result.AddRange(GetReachableCells(chessPiece));
 
-            return result; //.Except(tmpResult).ToList();
+            return reachableCells.Except(result);
         }
 
         private void Move(int from, int to)

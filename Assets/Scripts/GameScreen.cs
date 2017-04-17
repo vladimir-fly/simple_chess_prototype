@@ -7,6 +7,7 @@ namespace SCPrototype
     {
         public Image SideTurnViewBackground;
         public Text SideTurnViewText;
+        public Text Caption;
 
         private bool SideTurn;
 
@@ -32,6 +33,13 @@ namespace SCPrototype
             }
 
             SideTurn = !SideTurn;
+        }
+
+        public void ShowCaption(string message)
+        {
+            if (Caption == null || string.IsNullOrEmpty(message)) return;
+            Caption.text = message;
+            Debug.Log(string.Format("[ShowCaption] Message: {0}", message));
         }
 
         public void Exit()

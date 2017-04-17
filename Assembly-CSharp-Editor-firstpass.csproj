@@ -4,7 +4,7 @@
     <unityVersion>5.6.0xb1Linux</unityVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <unityProcessId>7583</unityProcessId>
+    <unityProcessId>7129</unityProcessId>
   </PropertyGroup>
   <PropertyGroup>
     <LangVersion>4</LangVersion>
@@ -58,9 +58,6 @@
   <ItemGroup>
     <Compile Include="Assets\Plugins\Editor\JetBrains\RiderAssetPostprocessor.cs" />
     <Compile Include="Assets\Plugins\Editor\JetBrains\RiderPlugin.cs" />
-    <Reference Include="UnityEngine.Advertisements">
-      <HintPath>/opt/Unity/Editor/Data/UnityExtensions/Unity/Advertisements/UnityEngine.Advertisements.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEditor.Advertisements">
       <HintPath>/opt/Unity/Editor/Data/UnityExtensions/Unity/Advertisements/Editor/UnityEditor.Advertisements.dll</HintPath>
     </Reference>
@@ -102,9 +99,6 @@
     </Reference>
     <Reference Include="UnityEngine.HoloLens">
       <HintPath>/opt/Unity/Editor/Data/UnityExtensions/Unity/UnityHoloLens/RuntimeEditor/UnityEngine.HoloLens.dll</HintPath>
-    </Reference>
-    <Reference Include="UnityEngine.Purchasing">
-      <HintPath>/opt/Unity/Editor/Data/UnityExtensions/Unity/UnityPurchasing/UnityEngine.Purchasing.dll</HintPath>
     </Reference>
     <Reference Include="UnityEditor.VR">
       <HintPath>/opt/Unity/Editor/Data/UnityExtensions/Unity/UnityVR/Editor/UnityEditor.VR.dll</HintPath>

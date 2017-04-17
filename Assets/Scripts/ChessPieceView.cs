@@ -11,12 +11,14 @@ namespace SCPrototype
         private Transform _canvasTransform;
         public int CurrentCellId;
 
+        [HideInInspector] public Animation moveAnimation;
         [HideInInspector] public bool HasMoved;
 
         void Start()
         {
             _canvasTransform = transform.parent.parent.parent;
             CurrentCellId = transform.parent.GetComponent<CellView>().Id;
+            moveAnimation = GetComponent<Animation>();
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -25,11 +27,16 @@ namespace SCPrototype
             _parentTransform = transform.parent.transform;
             GetComponent<CanvasGroup>().blocksRaycasts = false;
             transform.SetParent(_canvasTransform);
+
+            if (moveAnimation != null)
+            {
+                moveAnimation.wrapMode = WrapMode.Loop;
+                moveAnimation.Play();
+            }
         }
 
         public void OnDrag(PointerEventData eventData)
         {
-            //todo play animation
             transform.position = Input.mousePosition;
         }
 
@@ -44,6 +51,10 @@ namespace SCPrototype
             }
 
             GetComponent<CanvasGroup>().blocksRaycasts = true;
+
+            if (moveAnimation != null)
+                moveAnimation.wrapMode = WrapMode.Once;
+
         }
     }
 }
